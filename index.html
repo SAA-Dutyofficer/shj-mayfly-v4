@@ -210,19 +210,49 @@ textarea::placeholder{color:var(--text3)}
 
 /* PRINT */
 @media print{
-  body{background:#fff}
+  @page{size:A4;margin:8mm 10mm}
+  body{background:#fff;-webkit-print-color-adjust:exact;print-color-adjust:exact}
   #toolbar,#upload-screen{display:none!important}
   #report-screen{display:block!important}
   .page{box-shadow:none;max-width:100%}
-  .rpt-body{padding:14px 20px}
-  .dc-ring.lg{width:100px;height:100px}
-  .dc-val.xl{font-size:22px}
-  .dc-ring.md{width:76px;height:76px}
-  .dc-val.lg{font-size:18px}
-  .dc-val.md{font-size:14px}
-  .circles-row-sub{grid-template-columns:repeat(5,1fr)}
-  .pk-grid.g4{grid-template-columns:repeat(4,1fr)}
-  .hl-grid{grid-template-columns:repeat(3,1fr)}
+  .rpt-hdr{padding:14px 20px 12px}
+  .rh-code{font-size:32px;letter-spacing:6px}
+  .rh-name{font-size:10px}
+  .rh-date{font-size:13px}
+  .rh-meta{margin-top:7px;gap:10px}
+  .disclaimer{padding:5px 16px;font-size:9px}
+  .rpt-body{padding:10px 16px 10px}
+  .section-wrap{margin-bottom:12px}
+  .sec-title{margin-bottom:8px}
+  .circles-row{gap:8px;margin-bottom:8px}
+  .circles-row-sub{grid-template-columns:repeat(5,1fr);gap:6px}
+  .dc-ring.lg{width:88px;height:88px}
+  .dc-val.xl{font-size:20px}
+  .dc-ring.md{width:66px;height:66px}
+  .dc-val.md{font-size:13px}
+  .dc-label{font-size:8px}
+  .dc-unit{font-size:7px}
+  .dc-ico{font-size:9px}
+  .peaks-row{gap:10px}
+  .peak-hdr{padding:7px 12px}
+  .ph-title{font-size:10px}
+  .peak-body{padding:7px}
+  .pk-card{padding:7px}
+  .pk-win{font-size:11px;margin-bottom:4px}
+  .pk-rows{gap:2px;margin-bottom:4px}
+  .pk-row-lbl{font-size:8px}
+  .pk-row-val{font-size:9px}
+  .pk-grid.g2{grid-template-columns:1fr 1fr}
+  .pk-grid.g3{grid-template-columns:1fr 1fr 1fr}
+  .pk-grid.g4{grid-template-columns:1fr 1fr 1fr 1fr}
+  .hl-grid{grid-template-columns:repeat(3,1fr);gap:7px}
+  .hl-card{padding:8px;gap:7px}
+  .hl-ico-wrap{width:28px;height:28px;font-size:14px}
+  .hl-lbl{font-size:7px}
+  .hl-val{font-size:12px}
+  .hl-sub{font-size:8px}
+  .notes-box{padding:9px 12px}
+  .note-line{font-size:10px}
 }
 </style>
 </head>
