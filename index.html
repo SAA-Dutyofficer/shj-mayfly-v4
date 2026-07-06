@@ -1,0 +1,794 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SHJ Daily Predictive Mayfly V4</title>
+<link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;800&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+<script>pdfjsLib.GlobalWorkerOptions.workerSrc='https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';</script>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+:root{
+  --bg:#0C1018;--card:#141B28;--card2:#1A2235;
+  --arr:#0B4A96;--arr-mid:#1A6FD4;--arr-light:#EBF3FF;
+  --dep:#076647;--dep-mid:#059669;--dep-light:#ECFDF5;
+  --gold:#D97706;--gold-light:#FFFBEB;
+  --purple:#5B21B6;--purple-mid:#7C3AED;
+  --border:rgba(255,255,255,0.07);--border2:rgba(255,255,255,0.12);
+  --text:#F1F5F9;--text2:rgba(255,255,255,0.55);--text3:rgba(255,255,255,0.28);
+  --mono:'Courier New',monospace;
+  --arabic:'Cairo',sans-serif;
+}
+body{font-family:-apple-system,'Segoe UI',Arial,sans-serif;background:var(--bg);color:var(--text);min-height:100vh}
+.ar{font-family:var(--arabic);direction:rtl;display:block;line-height:1.2}
+.ar-sub{font-family:var(--arabic);font-size:8px;color:rgba(255,255,255,0.5);direction:rtl;display:block;margin-top:1px}
+.ar-sub-dark{font-family:var(--arabic);font-size:7.5px;color:#94A3B8;direction:rtl;display:block;margin-top:1px;letter-spacing:0}
+.ar-lbl{font-family:var(--arabic);font-size:7px;color:rgba(255,255,255,0.4);direction:rtl;display:block;margin-top:0px}
+.rh-name-ar{font-family:var(--arabic);font-size:11px;font-weight:700;color:rgba(255,255,255,0.55);direction:rtl;margin-top:1px;letter-spacing:0}
+.sec-title-ar{font-family:var(--arabic);font-size:8px;color:#94A3B8;direction:rtl;margin-right:4px;font-weight:600}
+.disclaimer-ar{font-family:var(--arabic);font-size:8.5px;direction:rtl;color:#78350F;display:block;margin-top:2px;line-height:1.4}
+
+/*  UPLOAD SCREEN  */
+#upload-screen{max-width:680px;margin:0 auto;padding:36px 20px 60px}
+.up-logo{text-align:center;margin-bottom:28px}
+.up-code{font-family:var(--mono);font-size:54px;font-weight:700;color:var(--arr-mid);letter-spacing:10px;line-height:1}
+.up-name{font-size:13px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:var(--text);margin-top:6px}
+.up-ver{display:inline-block;margin-top:8px;background:rgba(26,111,212,0.15);border:1px solid rgba(26,111,212,0.3);border-radius:20px;padding:3px 12px;font-size:10px;font-weight:700;color:var(--arr-mid);letter-spacing:.5px;text-transform:uppercase}
+
+.sec-lbl{font-size:9px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:var(--text3);margin:20px 0 8px;padding-bottom:6px;border-bottom:1px solid var(--border)}
+
+.date-row{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.f-label{font-size:9px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:.08em;display:block;margin-bottom:4px}
+input[type=date],select{width:100%;background:var(--card);border:1px solid var(--border2);border-radius:8px;padding:10px 12px;font-size:13px;color:var(--text);font-family:inherit;outline:none;-webkit-appearance:none}
+input[type=date]:focus,select:focus{border-color:var(--arr-mid)}
+select option{background:#1A2235}
+
+.dz-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+@media(max-width:480px){.dz-grid{grid-template-columns:1fr}.date-row{grid-template-columns:1fr}}
+
+.dz{border:2px dashed rgba(255,255,255,0.1);border-radius:10px;padding:18px 12px;text-align:center;cursor:pointer;position:relative;background:var(--card);transition:all .2s}
+.dz input{position:absolute;inset:0;opacity:0;cursor:pointer;width:100%;height:100%}
+.dz:hover,.dz.over{border-color:var(--arr-mid);background:rgba(26,111,212,0.06)}
+.dz.dep-dz:hover,.dz.dep-dz.over{border-color:var(--dep-mid);background:rgba(5,150,105,0.06)}
+.dz.ok{border-color:var(--dep-mid);border-style:solid;background:rgba(5,150,105,0.07)}
+.dz-ico{font-size:22px;margin-bottom:6px;display:block}
+.dz-lbl{font-size:11px;font-weight:700;color:var(--text);margin-bottom:2px}
+.dz-sub{font-size:9px;color:var(--text3)}
+.dz-ok-txt{font-size:9px;font-weight:600;color:var(--dep-mid);margin-top:5px;display:none}
+
+.aims-note{font-size:10px;background:rgba(217,119,6,0.1);border-left:3px solid var(--gold);padding:7px 10px;border-radius:6px;margin-bottom:8px;color:rgba(217,119,6,0.85);line-height:1.5}
+.aims-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.ab{border:2px dashed rgba(255,255,255,0.1);border-radius:10px;padding:14px 10px;text-align:center;cursor:pointer;position:relative;background:var(--card);transition:all .2s}
+.ab input{position:absolute;inset:0;opacity:0;cursor:pointer;width:100%;height:100%}
+.ab:hover{border-color:var(--arr-mid);background:rgba(26,111,212,0.06)}
+.ab.dep-ab:hover{border-color:var(--dep-mid);background:rgba(5,150,105,0.06)}
+.ab.ok-a{border-color:var(--arr-mid);border-style:solid;background:rgba(26,111,212,0.07)}
+.ab.ok-d{border-color:var(--dep-mid);border-style:solid;background:rgba(5,150,105,0.07)}
+.ab-ico{font-size:18px;margin-bottom:4px;display:block}
+.ab-lbl{font-size:10px;font-weight:700;color:var(--text);margin-bottom:2px}
+.ab-sub{font-size:9px;color:var(--text3)}
+.ab-ok{font-size:9px;font-weight:600;margin-top:4px;display:none}
+
+.notes-area{margin-top:8px}
+textarea{width:100%;background:var(--card);border:1px solid var(--border2);border-radius:8px;padding:10px 12px;font-size:12px;color:var(--text);font-family:inherit;outline:none;resize:vertical;min-height:72px;line-height:1.5}
+textarea:focus{border-color:var(--gold)}
+textarea::placeholder{color:var(--text3)}
+
+.gen-btn{display:block;width:100%;background:linear-gradient(135deg,#0B3A7A,var(--arr-mid));color:#fff;border:none;border-radius:10px;padding:14px;font-size:15px;font-weight:800;cursor:pointer;margin-top:20px;letter-spacing:.5px}
+.gen-btn:active{opacity:.8}
+.err{display:none;background:rgba(185,28,28,0.15);border:1px solid rgba(185,28,28,0.3);border-radius:8px;padding:10px 14px;font-size:12px;color:#FCA5A5;margin-top:10px}
+
+/*  REPORT SCREEN  */
+#report-screen{display:none;background:#F1F5F9;min-height:100vh}
+
+/* TOOLBAR */
+#toolbar{background:linear-gradient(135deg,#0A1628,#0B4A96);padding:10px 20px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:100}
+.tb-code{font-family:var(--mono);font-size:18px;font-weight:700;color:#fff;letter-spacing:4px}
+.tb-title{font-size:11px;color:rgba(255,255,255,0.5);font-weight:600}
+.tb-btns{display:flex;gap:8px}
+.tb-btn{padding:7px 14px;border-radius:7px;font-size:11px;font-weight:700;cursor:pointer;border:none;letter-spacing:.3px}
+.tb-back{background:rgba(255,255,255,0.1);color:rgba(255,255,255,0.7)}
+.tb-print{background:#fff;color:#0B4A96}
+
+/* PAGE - constrained for print */
+.page{max-width:960px;margin:0 auto;background:#fff;box-shadow:0 0 40px rgba(0,0,0,0.12)}
+
+/* REPORT HEADER */
+.rpt-hdr{
+  background:linear-gradient(135deg,#060E1F 0%,#0A2456 45%,#0B4A96 100%);
+  padding:26px 30px 22px;position:relative;overflow:hidden;
+  -webkit-print-color-adjust:exact;print-color-adjust:exact
+}
+.rh-deco{position:absolute;right:-50px;top:-50px;width:260px;height:260px;border-radius:50%;border:1px solid rgba(255,255,255,0.05)}
+.rh-deco2{position:absolute;right:-80px;top:-80px;width:360px;height:360px;border-radius:50%;border:1px solid rgba(255,255,255,0.03)}
+.rh-plane{position:absolute;right:24px;top:50%;transform:translateY(-50%);opacity:0.09;width:140px}
+.rh-inner{position:relative;z-index:2}
+.rh-code{font-family:var(--mono);font-size:44px;font-weight:700;color:#fff;letter-spacing:8px;line-height:1}
+.rh-name{font-size:12px;font-weight:700;letter-spacing:2.5px;text-transform:uppercase;color:rgba(255,255,255,0.55);margin-top:3px}
+.rh-meta{display:flex;align-items:center;gap:14px;margin-top:12px;flex-wrap:wrap}
+.rh-date{font-size:17px;font-weight:700;color:#fff}
+.rh-period{background:rgba(255,255,255,0.12);border:1px solid rgba(255,255,255,0.22);border-radius:20px;padding:3px 12px;font-size:10px;font-weight:700;color:#fff}
+.rh-gen{font-size:9px;color:rgba(255,255,255,0.35);margin-left:auto}
+
+/* DISCLAIMER */
+.disclaimer{background:#FFFBEB;border-left:4px solid #D97706;padding:7px 20px;font-size:10px;color:#78350F;-webkit-print-color-adjust:exact;print-color-adjust:exact}
+.disclaimer strong{font-weight:800}
+
+/* BODY */
+.rpt-body{padding:20px 24px 28px}
+
+/* SECTION TITLE */
+.sec-title{font-size:9px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:#94A3B8;margin-bottom:12px;display:flex;align-items:center;gap:8px}
+.sec-title::before{content:'';display:block;width:18px;height:2px;background:#0B4A96;border-radius:1px}
+.section-wrap{margin-bottom:22px}
+
+/*  DATA CIRCLES  */
+.circles-row{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:12px}
+.circles-row-sub{display:grid;grid-template-columns:repeat(5,1fr);gap:10px}
+@media(max-width:600px){
+  .circles-row{grid-template-columns:repeat(3,1fr);gap:8px}
+  .circles-row-sub{grid-template-columns:repeat(3,1fr)}
+}
+
+.dc{display:flex;flex-direction:column;align-items:center;text-align:center}
+.dc-ring{border-radius:50%;display:flex;flex-direction:column;align-items:center;justify-content:center;margin:0 auto 7px;position:relative;-webkit-print-color-adjust:exact;print-color-adjust:exact}
+/* Outer glow ring */
+.dc-ring::after{content:'';position:absolute;inset:-5px;border-radius:50%;border:1.5px solid rgba(255,255,255,0.0)}
+.dc-ring.lg{width:120px;height:120px}
+.dc-ring.md{width:90px;height:90px}
+
+.dc-ring.c-total{background:linear-gradient(145deg,#060E1F,#0A2456);box-shadow:0 6px 24px rgba(11,74,150,0.35)}
+.dc-ring.c-arr{background:linear-gradient(145deg,#0A2456,#0B4A96);box-shadow:0 6px 24px rgba(11,74,150,0.3)}
+.dc-ring.c-dep{background:linear-gradient(145deg,#052E1C,#076647);box-shadow:0 6px 24px rgba(7,102,71,0.3)}
+.dc-ring.c-shj{background:linear-gradient(145deg,#1A1035,#5B21B6);box-shadow:0 4px 18px rgba(91,33,182,0.3)}
+.dc-ring.c-conn{background:linear-gradient(145deg,#0A2456,#1A6FD4);box-shadow:0 4px 18px rgba(26,111,212,0.25)}
+.dc-ring.c-flts{background:linear-gradient(145deg,#1A1035,#5B21B6);box-shadow:0 4px 18px rgba(91,33,182,0.25)}
+.dc-ring.c-arr-f{background:linear-gradient(145deg,#0A2456,#0B4A96);box-shadow:0 4px 16px rgba(11,74,150,0.2)}
+.dc-ring.c-dep-f{background:linear-gradient(145deg,#052E1C,#076647);box-shadow:0 4px 16px rgba(7,102,71,0.2)}
+
+.dc-ico{font-size:11px;color:rgba(255,255,255,0.4);margin-bottom:1px}
+.dc-val{font-weight:900;color:#fff;line-height:1;letter-spacing:-.5px}
+.dc-val.xl{font-size:28px}
+.dc-val.lg{font-size:22px}
+.dc-val.md{font-size:17px}
+.dc-unit{font-size:8px;font-weight:600;color:rgba(255,255,255,0.4);margin-top:2px;letter-spacing:.05em;text-transform:uppercase}
+.dc-label{font-size:9px;font-weight:700;color:#475569;letter-spacing:.04em;text-transform:uppercase;line-height:1.3}
+
+/* Subtle ring border */
+.dc-ring.lg::after{inset:-4px;border:2px solid rgba(255,255,255,0.08)}
+.dc-ring.md::after{inset:-3px;border:1.5px solid rgba(255,255,255,0.07)}
+
+/*  PEAK PANELS  */
+.peaks-row{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+@media(max-width:600px){.peaks-row{grid-template-columns:1fr}}
+
+.peak-panel{border-radius:10px;overflow:hidden;border:1px solid #E2E8F0;-webkit-print-color-adjust:exact;print-color-adjust:exact}
+.peak-hdr{padding:10px 14px;display:flex;align-items:center;gap:8px}
+.peak-hdr.arr{background:linear-gradient(135deg,#060E1F,#0B4A96)}
+.peak-hdr.dep{background:linear-gradient(135deg,#052E1C,#076647)}
+.ph-ico{font-size:15px}
+.ph-title{font-size:11px;font-weight:700;color:#fff;letter-spacing:.3px}
+.ph-sub{font-size:8px;color:rgba(255,255,255,0.45);margin-left:auto}
+.peak-body{background:#F8FAFC;padding:10px}
+.pk-grid{display:grid;gap:8px}
+.pk-grid.g2{grid-template-columns:1fr 1fr}
+.pk-grid.g3{grid-template-columns:1fr 1fr 1fr}
+.pk-grid.g4{grid-template-columns:1fr 1fr 1fr 1fr}
+@media(max-width:700px){.pk-grid.g3,.pk-grid.g4{grid-template-columns:1fr 1fr}}
+
+.pk-card{background:#fff;border:1px solid #E2E8F0;border-radius:8px;padding:10px}
+.pk-rank{font-size:8px;font-weight:700;color:#94A3B8;text-transform:uppercase;letter-spacing:.06em;margin-bottom:3px}
+.pk-win{font-family:var(--mono);font-size:13px;font-weight:800;margin-bottom:6px}
+.pk-win.arr{color:#0B4A96}
+.pk-win.dep{color:#076647}
+.pk-rows{display:flex;flex-direction:column;gap:3px;margin-bottom:6px}
+.pk-row{display:flex;justify-content:space-between;align-items:center}
+.pk-row-lbl{font-size:9px;color:#94A3B8}
+.pk-row-val{font-size:10px;font-weight:700;color:#1E293B}
+.pk-row-val.hi-arr{color:#0B4A96}
+.pk-row-val.hi-dep{color:#076647}
+.pk-bar{height:3px;background:#E2E8F0;border-radius:2px}
+.pk-fill{height:100%;border-radius:2px}
+.pk-fill.arr{background:linear-gradient(90deg,#0B4A96,#1A6FD4)}
+.pk-fill.dep{background:linear-gradient(90deg,#076647,#059669)}
+
+/*  HIGHLIGHTS  */
+.hl-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:12px}
+@media(max-width:600px){.hl-grid{grid-template-columns:1fr 1fr}}
+
+.hl-card{background:#F8FAFC;border:1px solid #E2E8F0;border-radius:10px;padding:12px;display:flex;gap:10px;align-items:flex-start;-webkit-print-color-adjust:exact;print-color-adjust:exact}
+.hl-ico-wrap{width:34px;height:34px;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:17px;flex-shrink:0}
+.hl-ico-wrap.blue{background:#EFF6FF}
+.hl-ico-wrap.green{background:#ECFDF5}
+.hl-ico-wrap.gold{background:#FFFBEB}
+.hl-ico-wrap.purple{background:#F5F3FF}
+.hl-ico-wrap.slate{background:#F1F5F9}
+.hl-lbl{font-size:8px;font-weight:700;color:#94A3B8;text-transform:uppercase;letter-spacing:.07em;margin-bottom:3px}
+.hl-val{font-size:14px;font-weight:800;color:#0F172A;line-height:1.2}
+.hl-sub{font-size:9px;color:#64748B;margin-top:2px}
+
+/* NOTES BOX */
+.notes-box{background:#FFFBEB;border:1px solid #FDE68A;border-radius:10px;padding:14px 16px;min-height:0;-webkit-print-color-adjust:exact;print-color-adjust:exact}
+.notes-box-lbl{font-size:9px;font-weight:700;color:#92400E;text-transform:uppercase;letter-spacing:.08em;margin-bottom:8px;display:flex;align-items:center;gap:6px}
+.notes-box-lbl::before{content:'';display:block;width:14px;height:2px;background:#D97706;border-radius:1px}
+.note-line{display:flex;align-items:flex-start;gap:7px;font-size:11px;color:#451A03;line-height:1.45;margin-bottom:5px}
+.note-line:last-child{margin-bottom:0}
+.note-bullet{color:#D97706;font-weight:900;flex-shrink:0;margin-top:1px}
+
+/* PRINT */
+@media print{
+  @page{size:A4 portrait;margin:4mm 6mm}
+  body{background:#fff;-webkit-print-color-adjust:exact;print-color-adjust:exact;font-size:90%}
+  #toolbar,#upload-screen{display:none!important}
+  #report-screen{display:block!important}
+  .page{box-shadow:none;max-width:100%}
+  /* Scale entire report down to guarantee fit */
+  #report-screen > .page{transform:scale(0.87);transform-origin:top left;width:115%}
+  .rpt-hdr{padding:10px 18px 10px}
+  .rh-code{font-size:28px;letter-spacing:5px}
+  .rh-name{font-size:9px;margin-top:1px}
+  .rh-date{font-size:12px}
+  .rh-meta{margin-top:5px;gap:8px}
+  .rh-period{padding:2px 9px;font-size:9px}
+  .rh-gen{font-size:8px}
+  .disclaimer{padding:4px 14px;font-size:8.5px}
+  .rpt-body{padding:8px 14px 6px}
+  .section-wrap{margin-bottom:7px}
+  .sec-title{margin-bottom:6px;font-size:8px}
+  .circles-row{gap:5px;margin-bottom:5px;grid-template-columns:repeat(3,1fr)}
+  .circles-row-sub{grid-template-columns:repeat(5,1fr);gap:5px}
+  .dc-ring.lg{width:80px;height:80px}
+  .dc-val.xl{font-size:18px}
+  .dc-ring.md{width:60px;height:60px}
+  .dc-val.md{font-size:12px}
+  .dc-val.lg{font-size:16px}
+  .dc-label{font-size:7.5px}
+  .dc-unit{font-size:6.5px;margin-top:1px}
+  .dc-ico{font-size:8px;margin-bottom:0}
+  .peaks-row{gap:8px}
+  .peak-hdr{padding:6px 10px}
+  .ph-title{font-size:9px}
+  .ph-sub{font-size:7px}
+  .ph-ico{font-size:12px}
+  .peak-body{padding:6px}
+  .pk-card{padding:6px}
+  .pk-rank{font-size:7px;margin-bottom:2px}
+  .pk-win{font-size:10px;margin-bottom:3px}
+  .pk-rows{gap:1px;margin-bottom:3px}
+  .pk-row-lbl{font-size:7.5px}
+  .pk-row-val{font-size:8.5px}
+  .pk-bar{height:2px;margin-top:4px}
+  .pk-grid.g2{grid-template-columns:1fr 1fr}
+  .pk-grid.g3{grid-template-columns:1fr 1fr 1fr}
+  .pk-grid.g4{grid-template-columns:1fr 1fr 1fr 1fr}
+  .hl-grid{grid-template-columns:repeat(3,1fr);gap:4px}
+  .hl-card{padding:5px 7px;gap:5px}
+  .hl-ico-wrap{width:26px;height:26px;font-size:13px;flex-shrink:0}
+  .hl-lbl{font-size:6.5px;margin-bottom:1px}
+  .hl-val{font-size:10px}
+  .hl-sub{font-size:7.5px;margin-top:1px}
+  .notes-box{padding:7px 10px}
+  .notes-box[style*="display:none"]{display:none!important}
+  #notes-box{display:none}
+  #notes-box[style*="block"]{display:block!important}
+  .notes-box-lbl{font-size:7.5px;margin-bottom:5px}
+  .note-line{font-size:9px;margin-bottom:3px}
+}
+</style>
+</head>
+<body>
+
+<!--  UPLOAD  -->
+<div id="upload-screen">
+  <div class="up-logo">
+    <div class="up-code">SHJ</div>
+    <div class="up-name">Daily Predictive Mayfly</div><div style="font-family:var(--arabic);font-size:12px;color:rgba(255,255,255,0.5);direction:rtl;margin-top:3px">البرنامج اليومي التنبؤي للرحلات</div>
+    <span class="up-ver">Version 4 &mdash; One-Page Briefing</span>
+  </div>
+
+  <div class="sec-lbl">Date &amp; Period &#x2022; التاريخ والفترة</div>
+  <div class="date-row">
+    <div>
+      <label class="f-label">Operations Date</label>
+      <input type="date" id="ops-date">
+    </div>
+    <div>
+      <label class="f-label">Shift Period</label>
+      <select id="shift-sel">
+        <option value="00:01 &#8211; 23:59 LT">Full Day &#x2022; اليوم الكامل (00:01 &#8211; 23:59)</option>
+        <option value="06:00 &#8211; 18:00 LT">Morning &#x2022; الصباح (06:00 &#8211; 18:00)</option>
+        <option value="18:00 &#8211; 06:00 LT (+1)">Night &#x2022; الليل (18:00 &#8211; 06:00+1)</option>
+      </select>
+    </div>
+  </div>
+
+  <div class="sec-lbl">G9 Hub Data &#x2022; بيانات المحور</div>
+  <div class="dz-grid">
+    <div class="dz" id="dz-arr">
+      <input type="file" id="file-arr" accept=".xlsx,.xls,.csv">
+      <span class="dz-ico">&#9660;&#65039;</span>
+      <div class="dz-lbl">Arrivals (G9)</div>
+      <div class="dz-sub">Hub Report &#8212; Arrivals</div>
+      <div class="dz-ok-txt" id="ok-arr"></div>
+    </div>
+    <div class="dz dep-dz" id="dz-dep">
+      <input type="file" id="file-dep" accept=".xlsx,.xls,.csv">
+      <span class="dz-ico">&#9650;&#65039;</span>
+      <div class="dz-lbl">Departures (G9)</div>
+      <div class="dz-sub">Hub Report &#8212; Departures</div>
+      <div class="dz-ok-txt" id="ok-dep"></div>
+    </div>
+  </div>
+
+  <div class="sec-lbl">Other Airlines &#8212; AIMS May Fly PDF &#x2022; شركات الطيران الأخرى</div>
+  <div class="aims-note">Upload AIMS May Fly PDFs. ABY excluded automatically. PAX estimated at 77.5% load factor.</div>
+  <div class="aims-grid">
+    <div class="ab" id="ab-arr" ondragover="abDov(event,'arr')" ondragleave="abLeave('arr')" ondrop="abDrop(event,'arr')" onclick="document.getElementById('aims-arr').click()">
+      <input type="file" id="aims-arr" accept=".pdf" style="display:none" onchange="handleAimsPdf(this,'arr')">
+      <span class="ab-ico">&#9660;&#65039;</span>
+      <div class="ab-lbl">ARR &#8212; Other Airlines</div>
+      <div class="ab-sub">AIMS May Fly PDF</div>
+      <div class="ab-ok" id="ab-ok-arr"></div>
+    </div>
+    <div class="ab dep-ab" id="ab-dep" ondragover="abDov(event,'dep')" ondragleave="abLeave('dep')" ondrop="abDrop(event,'dep')" onclick="document.getElementById('aims-dep').click()">
+      <input type="file" id="aims-dep" accept=".pdf" style="display:none" onchange="handleAimsPdf(this,'dep')">
+      <span class="ab-ico">&#9650;&#65039;</span>
+      <div class="ab-lbl">DEP &#8212; Other Airlines</div>
+      <div class="ab-sub">AIMS May Fly PDF</div>
+      <div class="ab-ok" id="ab-ok-dep"></div>
+    </div>
+  </div>
+
+  <div class="sec-lbl">Operational Notes (optional) &#x2022; ملاحظات تشغيلية</div>
+  <div class="notes-area">
+    <label class="f-label">Manual highlights &#8212; one per line (new airlines, routes, events)</label>
+    <textarea id="manual-notes" placeholder="New airline: Pegasus Airlines commenced SHJ-SAW service&#10;New destination: SHJ-Tashkent launched&#10;G9 operating A321 on DAC route this week"></textarea>
+  </div>
+
+  <button class="gen-btn" onclick="generate()">&#9889; Generate Briefing &#x2022; إنشاء الإحاطة</button>
+  <div class="err" id="err"></div>
+</div>
+
+<!--  REPORT  -->
+<div id="report-screen">
+  <div id="toolbar">
+    <div class="tb-code">SHJ</div>
+    <div class="tb-title" id="tb-title"></div>
+    <div class="tb-btns">
+      <button class="tb-btn tb-back" onclick="goBack()">&#8592; Back</button>
+      <button class="tb-btn tb-print" onclick="window.print()">&#128424; Print / PDF</button>
+    </div>
+  </div>
+
+  <div class="page">
+    <!-- HEADER -->
+    <div class="rpt-hdr">
+      <div class="rh-deco"></div><div class="rh-deco2"></div>
+      <svg class="rh-plane" viewBox="0 0 200 120" fill="white" xmlns="http://www.w3.org/2000/svg">
+        <ellipse cx="100" cy="60" rx="78" ry="13"/>
+        <path d="M178 60Q198 60 198 63Q198 66 178 66Z"/>
+        <path d="M112 60L145 18L160 18L132 60Z"/>
+        <path d="M112 60L145 102L160 102L132 60Z"/>
+        <path d="M36 60L18 40L27 40L42 60Z"/>
+        <path d="M36 60L18 80L27 80L42 60Z"/>
+        <ellipse cx="124" cy="33" rx="11" ry="4"/>
+        <ellipse cx="124" cy="87" rx="11" ry="4"/>
+        <rect x="68" y="56" width="64" height="5" rx="2.5" fill="rgba(255,255,255,0.3)"/>
+      </svg>
+      <div class="rh-inner">
+        <div class="rh-code">SHJ</div>
+        <div class="rh-name">Daily Predictive Mayfly</div>
+      <div class="rh-name-ar">البرنامج اليومي التنبؤي للرحلات</div>
+        <div class="rh-meta">
+          <div class="rh-date" id="r-date"></div>
+          <div class="rh-period" id="r-period"></div>
+          <div class="rh-gen" id="r-gen"></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="disclaimer">
+      <strong>INDICATIVE FIGURES ONLY</strong> &#8212; PAX data sourced from G9 hub report <strong>one day prior</strong> to operations. Actual loads may vary. Use for staffing guidance only.
+      <span class="disclaimer-ar">أرقام استرشادية فقط &#8212; بيانات الركاب مصدرها تقرير المحور قبل يوم واحد من العمليات. قد تختلف الأحمال الفعلية. للاستخدام في التخطيط الوظيفي فقط.</span>
+    </div>
+
+    <div class="rpt-body">
+
+      <!-- KEY FIGURES -->
+      <div class="section-wrap">
+        <div class="sec-title">Key Figures <span class="sec-title-ar">&#x2022; الأرقام الرئيسية</span></div>
+        <div class="circles-row">
+          <div class="dc">
+            <div class="dc-ring lg c-total">
+              <div class="dc-ico">&#128101;</div>
+              <div class="dc-val xl" id="c-total">0</div>
+              <div class="dc-unit">Total PAX</div>
+            </div>
+            <div class="dc-label">Total Passengers<span class="ar-sub-dark">إجمالي المسافرين</span></div>
+          </div>
+          <div class="dc">
+            <div class="dc-ring lg c-arr">
+              <div class="dc-ico">&#9660;</div>
+              <div class="dc-val xl" id="c-arr">0</div>
+              <div class="dc-unit">ARR PAX</div>
+            </div>
+            <div class="dc-label">Arrivals (SHJ Imm.)<span class="ar-sub-dark">الوصول (هجرة الشارقة)</span></div>
+          </div>
+          <div class="dc">
+            <div class="dc-ring lg c-dep">
+              <div class="dc-ico">&#9650;</div>
+              <div class="dc-val xl" id="c-dep">0</div>
+              <div class="dc-unit">DEP PAX</div>
+            </div>
+            <div class="dc-label">Departures (BKLD)<span class="ar-sub-dark">المغادرة (الحجوزات)</span></div>
+          </div>
+        </div>
+        <div class="circles-row-sub">
+          <div class="dc">
+            <div class="dc-ring md c-shj">
+              <div class="dc-val md" id="c-shj">0</div>
+              <div class="dc-unit">PAX</div>
+            </div>
+            <div class="dc-label" style="font-size:8px">From SHJ (Local)<span class="ar-sub-dark" style="font-size:7px">من الشارقة (محلي)</span></div>
+          </div>
+          <div class="dc">
+            <div class="dc-ring md c-conn">
+              <div class="dc-val md" id="c-conn">0</div>
+              <div class="dc-unit">PAX</div>
+            </div>
+            <div class="dc-label" style="font-size:8px">Connecting<span class="ar-sub-dark" style="font-size:7px">ترانزيت</span></div>
+          </div>
+          <div class="dc">
+            <div class="dc-ring md c-arr-f">
+              <div class="dc-val md" id="c-arr-f">0</div>
+              <div class="dc-unit">FLTS</div>
+            </div>
+            <div class="dc-label" style="font-size:8px">ARR Flights<span class="ar-sub-dark" style="font-size:7px">رحلات الوصول</span></div>
+          </div>
+          <div class="dc">
+            <div class="dc-ring md c-dep-f">
+              <div class="dc-val md" id="c-dep-f">0</div>
+              <div class="dc-unit">FLTS</div>
+            </div>
+            <div class="dc-label" style="font-size:8px">DEP Flights<span class="ar-sub-dark" style="font-size:7px">رحلات المغادرة</span></div>
+          </div>
+          <div class="dc">
+            <div class="dc-ring md c-flts">
+              <div class="dc-val md" id="c-total-f">0</div>
+              <div class="dc-unit">FLTS</div>
+            </div>
+            <div class="dc-label" style="font-size:8px">Total Flights<span class="ar-sub-dark" style="font-size:7px">إجمالي الرحلات</span></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- PEAKS -->
+      <div class="section-wrap">
+        <div class="sec-title">Peak Periods <span class="sec-title-ar">&#x2022; فترات الذروة &#8212; أكثر النوافذ ازدحاماً</span></div>
+        <div class="peaks-row">
+          <div class="peak-panel">
+            <div class="peak-hdr arr">
+              <span class="ph-ico">&#9660;&#65039;</span>
+              <span class="ph-title">Arrivals Peaks <span class="ar-sub" style="font-size:8px;display:inline">&#x2022; ذروة الوصول</span></span>
+              <span class="ph-sub">Ranked by SHJ Immigration PAX &#x2022; مرتبة حسب ركاب هجرة الشارقة</span>
+            </div>
+            <div class="peak-body" id="arr-peak-body"><div style="font-size:11px;color:#999;padding:6px">No arrivals data</div></div>
+          </div>
+          <div class="peak-panel">
+            <div class="peak-hdr dep">
+              <span class="ph-ico">&#9650;&#65039;</span>
+              <span class="ph-title">Departures Peaks <span class="ar-sub" style="font-size:8px;display:inline">&#x2022; ذروة المغادرة</span></span>
+              <span class="ph-sub">Ranked by local SHJ DEP PAX &#x2022; مرتبة حسب ركاب المغادرة المحليين</span>
+            </div>
+            <div class="peak-body" id="dep-peak-body"><div style="font-size:11px;color:#999;padding:6px">No departures data</div></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- HIGHLIGHTS -->
+      <div class="section-wrap">
+        <div class="sec-title">Highlights &amp; Intelligence <span class="sec-title-ar">&#x2022; أبرز المؤشرات والتحليلات</span></div>
+        <div class="hl-grid" id="hl-grid"></div>
+        <div class="notes-box" id="notes-box" style="display:none">
+          <div class="notes-box-lbl">Operational Notes</div>
+          <div id="notes-lines"></div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<script>
+let arrData=null,depData=null,otherArrData=null,otherDepData=null;
+document.getElementById('ops-date').value=new Date().toISOString().split('T')[0];
+
+//  DRAG/DROP G9 
+['arr','dep'].forEach(t=>{
+  const inp=document.getElementById('file-'+t);
+  const dz=document.getElementById('dz-'+t);
+  inp.addEventListener('change',e=>{if(e.target.files[0])readG9(e.target.files[0],t);});
+  dz.addEventListener('dragover',e=>{e.preventDefault();dz.classList.add('over');});
+  dz.addEventListener('dragleave',()=>dz.classList.remove('over'));
+  dz.addEventListener('drop',e=>{e.preventDefault();dz.classList.remove('over');if(e.dataTransfer.files[0])readG9(e.dataTransfer.files[0],t);});
+});
+
+//  AIMS DRAG/DROP 
+function abDov(e,d){e.preventDefault();document.getElementById('ab-'+d).classList.add('over');}
+function abLeave(d){document.getElementById('ab-'+d).classList.remove('over');}
+function abDrop(e,d){e.preventDefault();abLeave(d);const f=e.dataTransfer&&e.dataTransfer.files[0];if(f&&f.type==='application/pdf')handleAimsPdf({files:[f]},d);}
+
+//  G9 READER 
+function readG9(file,dir){
+  const rdr=new FileReader();
+  rdr.onload=e=>{
+    try{
+      let rows;
+      const nm=file.name.toLowerCase();
+      if(nm.endsWith('.csv')){
+        const lines=e.target.result.trim().split(/\r?\n/);
+        const hdrs=lines[0].split(',').map(h=>h.trim().replace(/^\uFEFF/,''));
+        rows=lines.slice(1).map(l=>{const v=l.split(',').map(x=>x.trim());const o={};hdrs.forEach((h,i)=>o[h]=v[i]||'');return o;}).filter(r=>Object.values(r).some(v=>v));
+      } else {
+        const wb=XLSX.read(new Uint8Array(e.target.result),{type:'array'});
+        rows=XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]],{defval:''});
+      }
+      const norm=normaliseG9(rows,dir);
+      if(!norm.length){showErr('No valid G9 flights in '+dir+' file.');return;}
+      if(dir==='arr'){arrData=norm;}else{depData=norm;}
+      const dz=document.getElementById('dz-'+dir);
+      dz.classList.add('ok');
+      const ok=document.getElementById('ok-'+dir);
+      ok.textContent='OK: '+file.name.substring(0,24)+' ('+norm.length+' flts)';
+      ok.style.display='block';
+    }catch(err){showErr('Error: '+err.message);}
+  };
+  file.name.toLowerCase().endsWith('.csv')?rdr.readAsText(file):rdr.readAsArrayBuffer(file);
+}
+
+function col(r,k){for(const key of Object.keys(r)){if(key.toUpperCase().replace(/[\s_]/g,'')===(k||'').toUpperCase().replace(/[\s_]/g,''))return String(r[key]||'');}return '';}
+function pt(t){if(!t)return null;t=String(t).trim();const m=/^(\d{1,2}):(\d{2})/.exec(t);if(m)return m[1].padStart(2,'0')+':'+m[2];return null;}
+
+function normaliseG9(rows,dir){
+  return rows.map(r=>{
+    const flt=col(r,'FLT_NO')||col(r,'FLTNO')||col(r,'FLT NO')||col(r,'FLIGHT')||'';
+    if(!flt||!flt.match(/^G9/i))return null;
+    const timeRaw=dir==='arr'?col(r,'STA')||col(r,'ETA'):col(r,'STD')||col(r,'ETD');
+    const time=pt(timeRaw);if(!time)return null;
+    const bkld=parseInt(col(r,'BKLD'))||0;
+    const shj=parseInt(col(r,'SHJ'))||parseInt(col(r,'SHJ '))||0;
+    const trnst=parseInt(col(r,'TRNST'))||parseInt(col(r,'TRANSIT'))||0;
+    const inbd=parseInt(col(r,'INBD'))||parseInt(col(r,'INBDz'))||0;
+    const stn=dir==='arr'?col(r,'ORIGIN')||col(r,'ORG'):col(r,'DESTN')||col(r,'DEST')||col(r,'DESTINATION');
+    return{flt:flt.trim(),time,bkld,shj,trnst,inbd,stn:stn.trim(),isG9:true};
+  }).filter(Boolean).sort((a,b)=>a.time.localeCompare(b.time));
+}
+
+//  AIMS PDF 
+const AC_CAPS={'A319':138,'A320':165,'A321':194,'A20N':165,'A21N':194,'32N':165,'B738':160,'B739':177,'73H':160,'B77W':396,'A330':278,'E295':132,'E195':120,'AT72':72,'BBJ':50};
+function gcap(t){if(!t)return 165;t=t.trim().toUpperCase();if(AC_CAPS[t])return AC_CAPS[t];for(const k of Object.keys(AC_CAPS))if(t.includes(k)||k.includes(t))return AC_CAPS[k];return 165;}
+
+async function handleAimsPdf(inp,dir){
+  const file=inp.files[0];if(!file)return;
+  const dz=document.getElementById('ab-'+dir);
+  dz.querySelector('.ab-sub').textContent='Parsing...';
+  try{
+    const buf=await file.arrayBuffer();
+    const pdf=await pdfjsLib.getDocument({data:buf}).promise;
+    const flights=[];
+    for(let p=1;p<=pdf.numPages;p++){
+      const pg=await pdf.getPage(p);
+      const tc=await pg.getTextContent();
+      const items=tc.items.map(x=>x.str.trim()).filter(Boolean);
+      for(let i=0;i<items.length;i++){
+        if(!/^\d{1,2}:\d{2}$/.test(items[i]))continue;
+        if(i<3)continue;
+        const fc=(items[i-3]||'').trim();
+        const pc=(items[i-2]||'').trim();
+        const stn=(items[i-1]||'').trim().toUpperCase();
+        const ac=(items[i+1]||'').trim().toUpperCase();
+        if(!pc.includes('Passenger'))continue;
+        if(!/^[A-Z]{2,3}\s+\d{1,4}[A-Z]?$/.test(fc))continue;
+        const al=fc.split(' ')[0].toUpperCase();
+        if(al==='ABY')continue;
+        const tp=items[i].split(':');
+        const norm=(tp[0].length===1?'0':'')+tp[0]+':'+tp[1];
+        const ep=Math.round(gcap(ac)*0.775);
+        flights.push({flt:fc,airline:al,stn,type:ac||'A320',time:norm,bkld:ep,shj:ep,trnst:0,inbd:0,isG9:false,estPax:true});
+      }
+    }
+    const seen=new Set();
+    const uniq=flights.filter(f=>{const k=f.flt+f.time;if(seen.has(k))return false;seen.add(k);return true;});
+    if(dir==='arr')otherArrData=uniq;else otherDepData=uniq;
+    dz.classList.add(dir==='arr'?'ok-a':'ok-d');
+    dz.querySelector('.ab-sub').textContent=file.name.substring(0,22);
+    const ok=document.getElementById('ab-ok-'+dir);
+    ok.textContent=uniq.length+' flights loaded (est. PAX)';
+    ok.style.display='block';
+  }catch(e){dz.querySelector('.ab-sub').textContent='Error: '+e.message;}
+}
+
+//  HELPERS 
+function t2m(t){if(!t)return 0;const[h,m]=t.split(':').map(Number);return h*60+m;}
+function m2t(m){return String(Math.floor(m/60)).padStart(2,'0')+':'+String(m%60).padStart(2,'0');}
+function fmt(n){return Number(n||0).toLocaleString('en-GB');}
+function showErr(msg){const el=document.getElementById('err');el.textContent=msg;el.style.display='block';setTimeout(()=>el.style.display='none',5000);}
+function fmtDate(v){if(!v)return '--';const[y,mo,d]=v.split('-');return new Date(y,mo-1,d).toLocaleDateString('en-GB',{weekday:'long',day:'numeric',month:'long',year:'numeric'});}
+
+//  PEAK DETECTION 
+function detectPeaks(data,scoreFn){
+  if(!data||!data.length)return[];
+  const WIN=120,STEP=10,MAX=4;
+  const res=[];
+  for(let s=0;s<=1439-WIN;s+=STEP){
+    const e2=s+WIN;
+    const rows=data.filter(r=>{const m=t2m(r.time);return m>=s&&m<e2;});
+    const score=rows.reduce((a,r)=>a+scoreFn(r),0);
+    res.push({start:s,end:e2,score,rows});
+  }
+  res.sort((a,b)=>b.score-a.score);
+  const top=res.length?res[0].score:0;
+  const thr=top*0.1;
+  const peaks=[];
+  for(const r of res){
+    if(peaks.length===MAX)break;
+    if(r.score<thr)break;
+    if(!peaks.some(p=>r.start<p.end&&r.end>p.start))peaks.push(r);
+  }
+  return peaks.sort((a,b)=>a.start-b.start);
+}
+
+function renderPeaks(peaks,bodyId,type){
+  const body=document.getElementById(bodyId);
+  if(!peaks.length){body.innerHTML='<div style="font-size:11px;color:#999;padding:6px">No data loaded</div>';return;}
+  const maxS=Math.max(...peaks.map(p=>p.score),1);
+  const ranks=['<span style="font-size:7px;color:#94A3B8;letter-spacing:.04em">1ST PEAK</span><span style="font-family:Cairo,sans-serif;font-size:8px;color:#94A3B8;display:block;direction:rtl">ذروة الأولى</span>','<span style="font-size:7px;color:#94A3B8;letter-spacing:.04em">2ND PEAK</span><span style="font-family:Cairo,sans-serif;font-size:8px;color:#94A3B8;display:block;direction:rtl">ذروة الثانية</span>','<span style="font-size:7px;color:#94A3B8;letter-spacing:.04em">3RD PEAK</span><span style="font-family:Cairo,sans-serif;font-size:8px;color:#94A3B8;display:block;direction:rtl">ذروة الثالثة</span>','<span style="font-size:7px;color:#94A3B8;letter-spacing:.04em">4TH PEAK</span><span style="font-family:Cairo,sans-serif;font-size:8px;color:#94A3B8;display:block;direction:rtl">ذروة الرابعة</span>'];
+  const isArr=type==='arr';
+  const gc=peaks.length<=2?'g2':peaks.length===3?'g3':'g4';
+  let h='<div class="pk-grid '+gc+'">';
+  peaks.forEach((p,i)=>{
+    const bw=Math.round((p.score/maxS)*100);
+    const flts=p.rows.length;
+    const pax=isArr?p.rows.reduce((s,r)=>s+r.shj,0):p.rows.reduce((s,r)=>s+Math.max(r.bkld-r.inbd,0),0);
+    const bkld=p.rows.reduce((s,r)=>s+r.bkld,0);
+    h+='<div class="pk-card">'
+      +'<div class="pk-rank">'+ranks[i]+' Peak</div>'
+      +'<div class="pk-win '+(isArr?'arr':'dep')+'">'+m2t(p.start)+' \u2013 '+m2t(p.end)+'</div>'
+      +'<div class="pk-rows">'
+      +'<div class="pk-row"><span class="pk-row-lbl">رحلات Flights</span><span class="pk-row-val">'+flts+'</span></div>'
+      +'<div class="pk-row"><span class="pk-row-lbl">'+(isArr?'SHJ Imm. هجرة':'Local DEP محلي')+'</span><span class="pk-row-val '+(isArr?'hi-arr':'hi-dep')+'">'+fmt(pax)+'</span></div>'
+      +'<div class="pk-row"><span class="pk-row-lbl">حجوزات Total BKLD</span><span class="pk-row-val">'+fmt(bkld)+'</span></div>'
+      +'</div>'
+      +'<div class="pk-bar"><div class="pk-fill '+(isArr?'arr':'dep')+'" style="width:'+bw+'%"></div></div>'
+      +'</div>';
+  });
+  h+='</div>';
+  body.innerHTML=h;
+}
+
+//  AUTO HIGHLIGHTS 
+function buildHighlights(arrD,depD,otherArr,otherDep){
+  const hls=[];
+  const ta=arrD?arrD.reduce((s,r)=>s+r.shj,0):0;
+  const td=depD?depD.reduce((s,r)=>s+r.bkld,0):0;
+
+  // Total PAX
+  hls.push({ico:'&#128101;',cls:'blue',lbl:'إجمالي المسافرين Total Passengers',val:fmt(ta+td)+' PAX',sub:'إجمالي الوصول والمغادرة Combined ARR + DEP'});
+
+  // Busiest ARR hour
+  if(arrD&&arrD.length){
+    const hc={};arrD.forEach(r=>{const h=r.time.split(':')[0];hc[h]=(hc[h]||0)+1;});
+    const top=Object.entries(hc).sort((a,b)=>b[1]-a[1])[0];
+    if(top)hls.push({ico:'&#9660;&#65039;',cls:'blue',lbl:'ذروة الوصول Busiest Arrival Hour',val:top[0]+':00 – '+top[0]+':59',sub:top[1]+' رحلة G9 في هذه الساعة'});
+  }
+
+  // Busiest DEP hour
+  if(depD&&depD.length){
+    const hc={};depD.forEach(r=>{const h=r.time.split(':')[0];hc[h]=(hc[h]||0)+1;});
+    const top=Object.entries(hc).sort((a,b)=>b[1]-a[1])[0];
+    if(top)hls.push({ico:'&#9650;&#65039;',cls:'green',lbl:'ذروة المغادرة Busiest Departure Hour',val:top[0]+':00 – '+top[0]+':59',sub:top[1]+' رحلة G9 في هذه الساعة'});
+  }
+
+  // Highest BKLD departure
+  if(depD&&depD.length){
+    const top=depD.slice().sort((a,b)=>b.bkld-a.bkld)[0];
+    if(top)hls.push({ico:'&#128200;',cls:'green',lbl:'أعلى حمولة مغادرة Highest Load Dep.',val:top.flt+' إلى '+top.stn,sub:fmt(top.bkld)+' BKLD PAX الساعة '+top.time});
+  }
+
+  // Highest SHJ arrival
+  if(arrD&&arrD.length){
+    const top=arrD.slice().sort((a,b)=>b.shj-a.shj)[0];
+    if(top)hls.push({ico:'&#128200;',cls:'blue',lbl:'أعلى حمولة وصول Highest Load Arr.',val:top.flt+' من '+top.stn,sub:fmt(top.shj)+' SHJ PAX الساعة '+top.time});
+  }
+
+  // Unique destinations
+  if(depD&&depD.length){
+    const dests=new Set(depD.map(r=>r.stn).filter(Boolean));
+    hls.push({ico:'&#127759;',cls:'gold',lbl:'الوجهات المخدومة Destinations Served',val:dests.size+' وجهة',sub:'G9 مغادرة من الشارقة اليوم'});
+  }
+
+  // Other airlines - separate ARR and DEP
+  if(otherArr&&otherArr.length){
+    const airlines=new Set(otherArr.map(r=>r.airline).filter(Boolean));
+    const estPax=otherArr.reduce((s,r)=>s+r.bkld,0);
+    hls.push({ico:'&#9660;&#65039;',cls:'purple',lbl:'شركات أخرى وصول Other Airlines ARR',val:otherArr.length+' رحلة / '+airlines.size+' شركة',sub:'تقدير '+fmt(estPax)+' راكب (77.5% LF)'});
+  }
+  if(otherDep&&otherDep.length){
+    const airlines=new Set(otherDep.map(r=>r.airline).filter(Boolean));
+    const estPax=otherDep.reduce((s,r)=>s+r.bkld,0);
+    hls.push({ico:'&#9650;&#65039;',cls:'purple',lbl:'شركات أخرى مغادرة Other Airlines DEP',val:otherDep.length+' رحلة / '+airlines.size+' شركة',sub:'تقدير '+fmt(estPax)+' راكب (77.5% LF)'});
+  }
+
+  // Transit %
+  if(depD&&depD.length){
+    const totalInbd=depD.reduce((s,r)=>s+r.inbd,0);
+    const pct=td>0?Math.round((totalInbd/td)*100):0;
+    hls.push({ico:'&#128257;',cls:'slate',lbl:'حركة الترانزيت Connecting Traffic',val:pct+'% من ركاب المغادرة',sub:fmt(totalInbd)+' راكب ترانزيت'});
+  }
+
+  return hls;
+}
+
+//  GENERATE 
+function generate(){
+  if(!arrData&&!depData){showErr('Please upload at least one G9 hub data file.');return;}
+  const dateVal=document.getElementById('ops-date').value;
+  const period=document.getElementById('shift-sel').value;
+
+  document.getElementById('r-date').textContent=fmtDate(dateVal);
+  document.getElementById('r-period').textContent=period;
+  document.getElementById('r-gen').textContent='Generated '+new Date().toLocaleString('en-GB');
+  document.getElementById('tb-title').textContent='Daily Predictive Mayfly \u2014 '+fmtDate(dateVal);
+
+  // Circles
+  const ta=arrData?arrData.reduce((s,r)=>s+r.shj,0):0;
+  const td=depData?depData.reduce((s,r)=>s+r.bkld,0):0;
+  const tShj=depData?depData.reduce((s,r)=>s+Math.max(r.bkld-r.inbd,0),0):0;
+  const tConn=depData?depData.reduce((s,r)=>s+r.inbd,0):0;
+  const arrF=arrData?arrData.length:0;
+  const depF=depData?depData.length:0;
+  document.getElementById('c-total').textContent=fmt(ta+td);
+  document.getElementById('c-arr').textContent=fmt(ta);
+  document.getElementById('c-dep').textContent=fmt(td);
+  document.getElementById('c-shj').textContent=fmt(tShj);
+  document.getElementById('c-conn').textContent=fmt(tConn);
+  document.getElementById('c-arr-f').textContent=arrF;
+  document.getElementById('c-dep-f').textContent=depF;
+  document.getElementById('c-total-f').textContent=arrF+depF;
+
+  // Peaks
+  if(arrData){const p=detectPeaks(arrData,r=>r.shj);renderPeaks(p,'arr-peak-body','arr');}
+  if(depData){const p=detectPeaks(depData,r=>Math.max(r.bkld-r.inbd,0));renderPeaks(p,'dep-peak-body','dep');}
+
+  // Highlights
+  const hls=buildHighlights(arrData,depData,otherArrData,otherDepData);
+  document.getElementById('hl-grid').innerHTML=hls.map(h=>
+    '<div class="hl-card">'
+    +'<div class="hl-ico-wrap '+h.cls+'">'+h.ico+'</div>'
+    +'<div><div class="hl-lbl">'+h.lbl+'</div><div class="hl-val">'+h.val+'</div><div class="hl-sub">'+h.sub+'</div></div>'
+    +'</div>'
+  ).join('');
+
+  // Manual notes
+  const notes=document.getElementById('manual-notes').value.trim();
+  const nb=document.getElementById('notes-box');
+  if(notes){
+    document.getElementById('notes-lines').innerHTML=notes.split('\n').filter(l=>l.trim()).map(l=>'<div class="note-line"><span class="note-bullet">&#10022;</span>'+l.trim()+'</div>').join('');
+    nb.style.display='block';
+  } else nb.style.display='none';
+
+  document.getElementById('upload-screen').style.display='none';
+  document.getElementById('report-screen').style.display='block';
+  window.scrollTo(0,0);
+}
+
+function goBack(){
+  document.getElementById('upload-screen').style.display='block';
+  document.getElementById('report-screen').style.display='none';
+  window.scrollTo(0,0);
+}
+</script>
+</body>
+</html>
